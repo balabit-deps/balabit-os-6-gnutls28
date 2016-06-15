@@ -1,0 +1,123 @@
+From: Nikos Mavrogiannopoulos <nmav@gnutls.org>
+To: GnuTLS development list <gnutls-devel@lists.gnutls.org>
+Subject: Re: [gnutls-devel] gnutls 3.4.10 testsuite error on amd64 (SSSE3
+        cipher tests failed)
+Message-ID: <CAJU7zaL-5uaGwASBaqQEPnB34-k83HbALofNfNqEQwdYjmmEPw@mail.gmail.com>
+
+   On Wed, Mar 16, 2016 at 5:44 PM, Andreas Metzler <ametzler@bebt.de> wrote:
+   > On 2016-03-16 Nikos Mavrogiannopoulos <nmav@gnutls.org> wrote:
+   [...]
+   >> Thanks. It seems that the CPU has no SSSE3 and the test overrides the
+   >> cpuid to force SSSE3 usage. I'm wondering whether it is better to
+   >> change the test to detect cpu capabilities via /proc/cpuinfo, or
+   >> remove the ability to override a CPU flag if the CPU doesn't support
+   >> it.
+   
+   > I thought that GNUTLS_CPUID_OVERRIDE was not supposed to enable
+   > unavailable features: "Note that CPU detection cannot be overriden,
+   > i.e., VIA options cannot be enabled on an Intel CPU."
+   
+   Correct, and the statement is in a way precise :) Only VIA options
+   cannot be enabled on an Intel CPU. Let's fix that then. Does the
+   attached patch solves the issue in the system without ssse3?
+
+
+diff --git a/lib/accelerated/x86/x86-common.c b/lib/accelerated/x86/x86-common.c
+index 18e3710..5cc8c00 100644
+--- a/lib/accelerated/x86/x86-common.c
++++ b/lib/accelerated/x86/x86-common.c
+@@ -76,18 +76,40 @@ unsigned int _gnutls_x86_cpuid_s[3];
+ 
+ static void capabilities_to_intel_cpuid(unsigned capabilities)
+ {
++	unsigned a,b,c,t;
++
+ 	memset(_gnutls_x86_cpuid_s, 0, sizeof(_gnutls_x86_cpuid_s));
++
+ 	if (capabilities & EMPTY_SET) {
+ 		return;
+ 	}
++
++	gnutls_cpuid(1, &t, &a, &b, &c);
++
+ 	if (capabilities & INTEL_AES_NI) {
+-		_gnutls_x86_cpuid_s[1] |= bit_AES;
++		if (b & bit_AES) {
++			_gnutls_x86_cpuid_s[1] |= bit_AES;
++		} else {
++			_gnutls_debug_log
++			    ("AESNI acceleration requested but not available\n");
++		}
+ 	}
++
+ 	if (capabilities & INTEL_SSSE3) {
+-		_gnutls_x86_cpuid_s[1] |= bit_SSSE3;
++		if (b & bit_SSSE3) {
++			_gnutls_x86_cpuid_s[1] |= bit_SSSE3;
++		} else {
++			_gnutls_debug_log
++			    ("SSSE3 acceleration requested but not available\n");
++		}
+ 	}
+-	if (capabilities & INTEL_PCLMUL) { /* ecx */
+-		_gnutls_x86_cpuid_s[1] |= bit_PCLMUL;
++	if (capabilities & INTEL_PCLMUL) {
++		if (b & bit_PCLMUL) { /* ecx */
++			_gnutls_x86_cpuid_s[1] |= bit_PCLMUL;
++		} else {
++			_gnutls_debug_log
++			    ("PCLMUL acceleration requested but not available\n");
++		}
+ 	}
+ }
+ 
+@@ -111,19 +133,43 @@ static unsigned check_pclmul(void)
+ #ifdef ENABLE_PADLOCK
+ static unsigned capabilities_to_via_edx(unsigned capabilities)
+ {
++	unsigned a,b,c,t;
++
+ 	memset(_gnutls_x86_cpuid_s, 0, sizeof(_gnutls_x86_cpuid_s));
++
+ 	if (capabilities & EMPTY_SET) {
+ 		return 0;
+ 	}
+-	if (capabilities & VIA_PADLOCK) { /* edx */
+-		_gnutls_x86_cpuid_s[2] |= via_bit_PADLOCK;
++
++	gnutls_cpuid(1, &t, &a, &b, &c);
++
++	if (capabilities & VIA_PADLOCK) {
++		if (c & via_bit_PADLOCK) {
++			_gnutls_x86_cpuid_s[2] |= via_bit_PADLOCK;
++		} else {
++			_gnutls_debug_log
++			    ("Padlock acceleration requested but not available\n");
++		}
+ 	}
+-	if (capabilities & VIA_PADLOCK_PHE) { /* edx */
+-		_gnutls_x86_cpuid_s[2] |= via_bit_PADLOCK_PHE;
++
++	if (capabilities & VIA_PADLOCK_PHE) {
++		if (c & via_bit_PADLOCK_PHE) { /* edx */
++			_gnutls_x86_cpuid_s[2] |= via_bit_PADLOCK_PHE;
++		} else {
++			_gnutls_debug_log
++			    ("Padlock-PHE acceleration requested but not available\n");
++		}
+ 	}
+-	if (capabilities & VIA_PADLOCK_PHE_SHA512) { /* edx */
+-		_gnutls_x86_cpuid_s[2] |= via_bit_PADLOCK_PHE_SHA512;
++
++	if (capabilities & VIA_PADLOCK_PHE_SHA512) {
++		if (c & via_bit_PADLOCK_PHE_SHA512) {
++			_gnutls_x86_cpuid_s[2] |= via_bit_PADLOCK_PHE_SHA512;
++		} else {
++			_gnutls_debug_log
++			    ("Padlock-PHE-SHA512 acceleration requested but not available\n");
++		}
+ 	}
++
+ 	return _gnutls_x86_cpuid_s[2];
+ }
+ 
