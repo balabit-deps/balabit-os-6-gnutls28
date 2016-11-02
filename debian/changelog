@@ -1,3 +1,9 @@
+gnutls28 (3.4.10-4ubuntu1.1bb1) UNRELEASED; urgency=medium
+
+  * Balabit patched version
+
+ -- Balabit Platform Team <devnull@dev.null>  Wed, 02 Nov 2016 17:34:59 +0100
+
 gnutls28 (3.4.10-4ubuntu1.1) xenial-proposed; urgency=medium
 
   * SRU: LP: #1592693.
