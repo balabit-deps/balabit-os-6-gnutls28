@@ -5,3 +5,10 @@
 42_mini-loss-time-improved-timeout-detection.patch
 43_fix_cpucapoverride.diff
 disable_global_init_override_test.patch
+CVE-2016-7444.patch
+CVE-2016-8610.patch
+CVE-2017-5334.patch
+CVE-2017-5335.patch
+CVE-2017-5336.patch
+CVE-2017-5337.patch
+fix_expired_certs.patch
