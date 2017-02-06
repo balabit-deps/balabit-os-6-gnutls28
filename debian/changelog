@@ -1,3 +1,9 @@
+gnutls28 (3.4.10-4ubuntu1.2bb1) xenial; urgency=medium
+
+  * Balabit patched version
+
+ -- Balabit Platform Team <devnull@dev.null>  Mon, 06 Feb 2017 13:57:00 +0100
+
 gnutls28 (3.4.10-4ubuntu1.2) xenial-security; urgency=medium
 
   * SECURITY UPDATE: OCSP validation issue
