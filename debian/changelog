@@ -1,3 +1,35 @@
+gnutls28 (3.4.10-4ubuntu1.2) xenial-security; urgency=medium
+
+  * SECURITY UPDATE: OCSP validation issue
+    - debian/patches/CVE-2016-7444.patch: correctly verify the serial
+      length in lib/x509/ocsp.c.
+    - CVE-2016-7444
+  * SECURITY UPDATE: denial of service via warning alerts
+    - debian/patches/CVE-2016-8610.patch: set a maximum number of warning
+      messages in lib/gnutls_int.h, lib/gnutls_handshake.c,
+      lib/gnutls_state.c.
+    - CVE-2016-8610
+  * SECURITY UPDATE: double-free when reading proxy language
+    - debian/patches/CVE-2017-5334.patch: fix double-free in
+      lib/x509/x509_ext.c.
+    - CVE-2017-5334
+  * SECURITY UPDATE: out of memory error in stream reading functions
+    - debian/patches/CVE-2017-5335.patch: add error checking to
+      lib/opencdk/read-packet.c.
+    - CVE-2017-5335
+  * SECURITY UPDATE: stack overflow in cdk_pk_get_keyid
+    - debian/patches/CVE-2017-5336.patch: check return code in
+      lib/opencdk/pubkey.c.
+    - CVE-2017-5336
+  * SECURITY UPDATE: heap read overflow when reading streams
+    - debian/patches/CVE-2017-5337.patch: add more precise checks to
+      lib/opencdk/read-packet.c.
+    - CVE-2017-5337
+  * debian/patches/fix_expired_certs.patch: use datefudge to fix test with
+    expired certs.
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Thu, 26 Jan 2017 10:14:03 -0500
+
 gnutls28 (3.4.10-4ubuntu1.1bb1) UNRELEASED; urgency=medium
 
   * Balabit patched version
