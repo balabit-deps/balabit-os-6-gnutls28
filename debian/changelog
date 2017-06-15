@@ -1,3 +1,22 @@
+gnutls28 (3.4.10-4ubuntu1.3) xenial-security; urgency=medium
+
+  * SECURITY UPDATE: null pointer dereference via status response TLS
+    extension decoding
+    - debian/patches/CVE-2017-7507-1.patch: ensure response IDs are
+      properly deinitialized in lib/ext/status_request.c.
+    - debian/patches/CVE-2017-7507-2.patch: remove parsing of responder IDs
+      from client extension in lib/ext/status_request.c.
+    - debian/patches/CVE-2017-7507-3.patch: documented requirements for
+      parameters in lib/ext/status_request.c.
+    - CVE-2017-7507
+  * SECURITY UPDATE: DoS and possible code execution via OpenPGP
+    certificate decoding
+    - debian/patches/CVE-2017-7869.patch: enforce packet limits in
+      lib/opencdk/read-packet.c.
+    - CVE-2017-7869
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Mon, 12 Jun 2017 09:32:37 -0400
+
 gnutls28 (3.4.10-4ubuntu1.2bb1) xenial; urgency=medium
 
   * Balabit patched version

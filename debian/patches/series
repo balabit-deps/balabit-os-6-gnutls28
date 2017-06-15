@@ -12,3 +12,7 @@ CVE-2017-5335.patch
 CVE-2017-5336.patch
 CVE-2017-5337.patch
 fix_expired_certs.patch
+CVE-2017-7869.patch
+CVE-2017-7507-1.patch
+CVE-2017-7507-2.patch
+CVE-2017-7507-3.patch
