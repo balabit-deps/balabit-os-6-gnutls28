@@ -1,3 +1,11 @@
+gnutls28 (3.4.10-4ubuntu1.4) xenial; urgency=medium
+
+  * use_normal_priority_for_openssl_sslv23.diff by Andreas Metzler:
+    OpenSSL wrapper: SSLv23_*_method translates to NORMAL GnuTLS priority,
+    which includes TLS1.2 support. (LP: #1709193)
+
+ -- Simon Deziel <simon.deziel@gmail.com>  Mon, 07 Aug 2017 23:04:43 +0000
+
 gnutls28 (3.4.10-4ubuntu1.3) xenial-security; urgency=medium
 
   * SECURITY UPDATE: null pointer dereference via status response TLS
