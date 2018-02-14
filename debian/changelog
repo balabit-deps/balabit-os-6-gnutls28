@@ -1,3 +1,9 @@
+gnutls28 (3.4.10-4ubuntu1.4bb1) xenial; urgency=medium
+
+  * Balabit patched version
+
+ -- Balabit Platform Team <devnull@dev.null>  Wed, 14 Feb 2018 18:28:38 +0100
+
 gnutls28 (3.4.10-4ubuntu1.4) xenial; urgency=medium
 
   * use_normal_priority_for_openssl_sslv23.diff by Andreas Metzler:
