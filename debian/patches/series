@@ -16,3 +16,4 @@ CVE-2017-7869.patch
 CVE-2017-7507-1.patch
 CVE-2017-7507-2.patch
 CVE-2017-7507-3.patch
+use_normal_priority_for_openssl_sslv23.diff
