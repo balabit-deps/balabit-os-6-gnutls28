@@ -1,3 +1,23 @@
+gnutls28 (3.4.10-4ubuntu1.5) xenial-security; urgency=medium
+
+  * SECURITY UPDATE: Lucky-13 issues
+    - debian/patches/CVE-2018-1084x-1.patch: correctly account the length
+      field in SHA384 HMAC in lib/algorithms/mac.c, lib/gnutls_cipher.c.
+    - debian/patches/CVE-2018-1084x-2.patch: always hash the same amount of
+      blocks that would have been on minimum pad in lib/gnutls_cipher.c.
+    - debian/patches/CVE-2018-1084x-3.patch: require minimum padding under
+      SSL3.0 in lib/gnutls_cipher.c.
+    - debian/patches/CVE-2018-1084x-4.patch: hmac-sha384 and sha256
+      ciphersuites were removed from defaults in lib/gnutls_priority.c,
+      tests/priorities.c.
+    - debian/patches/CVE-2018-1084x-5.patch: fix test for SHA512 in
+      tests/pkcs12_encode.c.
+    - CVE-2018-10844
+    - CVE-2018-10845
+    - CVE-2018-10846
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Tue, 28 May 2019 13:32:56 -0400
+
 gnutls28 (3.4.10-4ubuntu1.4bb1) xenial; urgency=medium
 
   * Balabit patched version
