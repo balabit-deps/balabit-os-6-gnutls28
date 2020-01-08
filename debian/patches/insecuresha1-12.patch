@@ -1,0 +1,27 @@
+Backport of:
+
+From 10ebf799f12d331b4e28336deeff6f13a39c0e87 Mon Sep 17 00:00:00 2001
+From: Nikos Mavrogiannopoulos <nmav@redhat.com>
+Date: Fri, 24 Feb 2017 09:09:10 +0100
+Subject: [PATCH] is_level_acceptable: no longer checks for broken algorithms
+
+This is done at is_broken_allowed(), and in fact checking them in
+is_level_acceptable() creates a conflict when overrides like flag
+GNUTLS_VERIFY_ALLOW_BROKEN is used.
+
+Signed-off-by: Nikos Mavrogiannopoulos <nmav@redhat.com>
+---
+ lib/x509/verify.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/lib/x509/verify.c
++++ b/lib/x509/verify.c
+@@ -403,7 +403,7 @@ int is_broken_allowed(gnutls_sign_algori
+ 			_gnutls_debug_log(#level": certificate's signature hash is unknown\n"); \
+ 			return gnutls_assert_val(0); \
+ 		} \
+-		if (entry->secure == 0 || entry->output_size*8/2 < sym_bits) { \
++		if (entry->output_size*8/2 < sym_bits) { \
+ 			_gnutls_debug_log(#level": certificate's signature hash strength is unacceptable (is %u bits, needed %u)\n", entry->output_size*8/2, sym_bits); \
+ 			return gnutls_assert_val(0); \
+ 		} \

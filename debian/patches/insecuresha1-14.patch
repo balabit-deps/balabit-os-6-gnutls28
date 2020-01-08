@@ -1,0 +1,62 @@
+From 2c452107b3876c6e76726bd95962c3c10e50d8e0 Mon Sep 17 00:00:00 2001
+From: Nikos Mavrogiannopoulos <nmav@redhat.com>
+Date: Fri, 24 Feb 2017 09:24:19 +0100
+Subject: [PATCH] gnutls_ocsp_resp_verify_direct, gnutls_ocsp_resp_verify:
+ defined flags argument
+
+That was defined to be gnutls_certificate_verify_flags, and
+it allows passing verification flags, such as flags to allow
+broken algorithms.
+
+Signed-off-by: Nikos Mavrogiannopoulos <nmav@redhat.com>
+---
+ lib/x509/ocsp.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/lib/x509/ocsp.c
++++ b/lib/x509/ocsp.c
+@@ -1981,7 +1981,7 @@ _ocsp_resp_verify_direct(gnutls_ocsp_res
+ 		goto done;
+ 	}
+ 
+-	rc = gnutls_pubkey_verify_data2(pubkey, sigalg, 0, &data, &sig);
++	rc = gnutls_pubkey_verify_data2(pubkey, sigalg, flags, &data, &sig);
+ 	if (rc == GNUTLS_E_PK_SIG_VERIFY_FAILED) {
+ 		gnutls_assert();
+ 		*verify = GNUTLS_OCSP_VERIFY_SIGNATURE_FAILURE;
+@@ -2052,7 +2052,7 @@ static int check_ocsp_purpose(gnutls_x50
+  * @resp: should contain a #gnutls_ocsp_resp_t type
+  * @issuer: certificate believed to have signed the response
+  * @verify: output variable with verification status, an #gnutls_ocsp_verify_reason_t
+- * @flags: verification flags, 0 for now.
++ * @flags: verification flags from #gnutls_certificate_verify_flags
+  *
+  * Verify signature of the Basic OCSP Response against the public key
+  * in the @issuer certificate.
+@@ -2091,7 +2091,7 @@ gnutls_ocsp_resp_verify_direct(gnutls_oc
+ 
+ 		unsigned int vtmp;
+ 
+-		rc = gnutls_x509_crt_verify(signercert, &issuer, 1, 0,
++		rc = gnutls_x509_crt_verify(signercert, &issuer, 1, flags,
+ 					    &vtmp);
+ 		if (rc != GNUTLS_E_SUCCESS) {
+ 			gnutls_assert();
+@@ -2128,7 +2128,7 @@ gnutls_ocsp_resp_verify_direct(gnutls_oc
+  * @resp: should contain a #gnutls_ocsp_resp_t type
+  * @trustlist: trust anchors as a #gnutls_x509_trust_list_t type
+  * @verify: output variable with verification status, an #gnutls_ocsp_verify_reason_t
+- * @flags: verification flags, 0 for now.
++ * @flags: verification flags from #gnutls_certificate_verify_flags
+  *
+  * Verify signature of the Basic OCSP Response against the public key
+  * in the certificate of a trusted signer.  The @trustlist should be
+@@ -2210,7 +2210,7 @@ gnutls_ocsp_resp_verify(gnutls_ocsp_resp
+ 			rc = gnutls_x509_trust_list_verify_crt2(trustlist,
+ 								&signercert, 1,
+ 								&vdata, 1,
+-								0, &vtmp, NULL);
++								flags, &vtmp, NULL);
+ 			if (rc != GNUTLS_E_SUCCESS) {
+ 				gnutls_assert();
+ 				goto done;

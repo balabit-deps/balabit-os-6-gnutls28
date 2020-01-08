@@ -1,0 +1,125 @@
+Backport of:
+
+From a0875593eb9308ae9ae9fde1b886422bb03540f5 Mon Sep 17 00:00:00 2001
+From: Nikos Mavrogiannopoulos <nmav@redhat.com>
+Date: Thu, 20 Jul 2017 12:17:40 +0200
+Subject: [PATCH] mac: re-organized the hash algorithms table
+
+Signed-off-by: Nikos Mavrogiannopoulos <nmav@redhat.com>
+---
+ lib/algorithms/mac.c | 137 ++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 109 insertions(+), 28 deletions(-)
+
+--- a/lib/algorithms/mac.c
++++ b/lib/algorithms/mac.c
+@@ -32,23 +32,75 @@
+ #endif
+ 
+ static const mac_entry_st hash_algorithms[] = {
+-	{"SHA1", HASH_OID_SHA1, GNUTLS_MAC_SHA1, 20, 20, 0, 0, SHA1_SECURE_VAL, 64},
+-	{"MD5", HASH_OID_MD5, GNUTLS_MAC_MD5, 16, 16, 0, 0, 0, 64},
+-	{"SHA256", HASH_OID_SHA256, GNUTLS_MAC_SHA256, 32, 32, 0, 0, 1,
+-	 64},
+-	{"SHA384", HASH_OID_SHA384, GNUTLS_MAC_SHA384, 48, 48, 0, 0, 1,
+-	 128},
+-	{"SHA512", HASH_OID_SHA512, GNUTLS_MAC_SHA512, 64, 64, 0, 0, 1,
+-	 128},
+-	{"SHA224", HASH_OID_SHA224, GNUTLS_MAC_SHA224, 28, 28, 0, 0, 1,
+-	 64},
+-	{"UMAC-96", NULL, GNUTLS_MAC_UMAC_96, 12, 16, 8, 0, 1, 0},
+-	{"UMAC-128", NULL, GNUTLS_MAC_UMAC_128, 16, 16, 8, 0, 1, 0},
+-	{"AEAD", NULL, GNUTLS_MAC_AEAD, 0, 0, 0, 1, 1, 0},
+-	{"MD2", HASH_OID_MD2, GNUTLS_MAC_MD2, 0, 0, 0, 0, 0, 0},	/* not used as MAC */
+-	{"RIPEMD160", HASH_OID_RMD160, GNUTLS_MAC_RMD160, 20, 20, 0, 0, 1,
+-	 64},
+-	{"MAC-NULL", NULL, GNUTLS_MAC_NULL, 0, 0, 0, 0, 0, 0},
++	{.name = "SHA1",
++	 .oid = HASH_OID_SHA1,
++	 .id = GNUTLS_MAC_SHA1,
++	 .output_size = 20,
++	 .key_size = 20,
++	 .secure = SHA1_SECURE_VAL,
++	 .block_size = 64},
++	{.name = "MD5",
++	 .oid = HASH_OID_MD5,
++	 .id = GNUTLS_MAC_MD5,
++	 .output_size = 16,
++	 .key_size = 16,
++	 .block_size = 64},
++	{.name = "SHA256",
++	 .oid = HASH_OID_SHA256,
++	 .id = GNUTLS_MAC_SHA256,
++	 .output_size = 32,
++	 .key_size = 32,
++	 .secure = 1,
++	 .block_size = 64},
++	{.name = "SHA384",
++	 .oid = HASH_OID_SHA384,
++	 .id = GNUTLS_MAC_SHA384,
++	 .output_size = 48,
++	 .key_size = 48,
++	 .secure = 1,
++	 .block_size = 64},
++	{.name = "SHA512",
++	 .oid = HASH_OID_SHA512,
++	 .id = GNUTLS_MAC_SHA512,
++	 .output_size = 64,
++	 .key_size = 64,
++	 .secure = 1,
++	 .block_size = 64},
++	{.name = "SHA224",
++	 .oid = HASH_OID_SHA224,
++	 .id = GNUTLS_MAC_SHA224,
++	 .output_size = 28,
++	 .key_size = 28,
++	 .secure = 1,
++	 .block_size = 64},
++	{.name = "UMAC-96",
++	 .id = GNUTLS_MAC_UMAC_96,
++	 .output_size = 12,
++	 .key_size = 16,
++	 .nonce_size = 8,
++	 .secure = 1},
++	{.name = "UMAC-128",
++	 .id = GNUTLS_MAC_UMAC_128,
++	 .output_size = 16,
++	 .key_size = 16,
++	 .nonce_size = 8,
++	 .secure = 1},
++	{.name = "AEAD",
++	 .id = GNUTLS_MAC_AEAD,
++	 .placeholder = 1,
++	 .secure = 1},
++	{.name = "MD2",
++	 .oid = HASH_OID_MD2,
++	 .id = GNUTLS_MAC_MD2},
++	{.name = "RIPEMD160",
++	 .oid = HASH_OID_RMD160,
++	 .id = GNUTLS_MAC_RMD160,
++	 .output_size = 20,
++	 .key_size = 20,
++	 .secure = 1,
++	 .block_size = 64},
++	{.name = "MAC-NULL",
++	 .id = GNUTLS_MAC_NULL},
+ 	{0, 0, 0, 0, 0, 0, 0, 0}
+ };
+ 
+@@ -176,7 +228,7 @@ gnutls_mac_algorithm_t gnutls_mac_get_id
+  * gnutls_mac_get_key_size:
+  * @algorithm: is an encryption algorithm
+  *
+- * Returns the size of the MAC key used in TLS. 
++ * Returns the size of the MAC key used in TLS.
+  *
+  * Returns: length (in bytes) of the given MAC key size, or 0 if the
+  *   given MAC algorithm is invalid.
+@@ -215,7 +267,7 @@ size_t gnutls_mac_get_nonce_size(gnutls_
+  * gnutls_mac_list:
+  *
+  * Get a list of hash algorithms for use as MACs.  Note that not
+- * necessarily all MACs are supported in TLS cipher suites.  
++ * necessarily all MACs are supported in TLS cipher suites.
+  * This function is not thread safe.
+  *
+  * Returns: Return a (0)-terminated list of #gnutls_mac_algorithm_t

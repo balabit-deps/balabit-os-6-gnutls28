@@ -1,0 +1,325 @@
+Backport of:
+
+From b26a40b616a90ab6af9408cabf228bdec2e15b69 Mon Sep 17 00:00:00 2001
+From: Nikos Mavrogiannopoulos <nmav@redhat.com>
+Date: Fri, 24 Feb 2017 09:42:26 +0100
+Subject: [PATCH] tests: updated to account SHA1 move to broken set
+
+Signed-off-by: Nikos Mavrogiannopoulos <nmav@redhat.com>
+---
+ tests/cert-tests/aki                |  2 +-
+ tests/cert-tests/certtool-long-oids |  4 ++--
+ tests/cert-tests/name-constraints   |  4 ++--
+ tests/cert-tests/pathlen            |  2 +-
+ tests/cert-tests/pem-decoding       |  2 +-
+ tests/cert-tests/pkcs1-pad          |  4 ++--
+ tests/cert-tests/pkcs7-cat          |  2 +-
+ tests/chainverify-unsorted.c        |  2 +-
+ tests/cve-2008-4989.c               |  2 +-
+ tests/dn2.c                         |  2 +-
+ tests/mini-tdb.c                    |  2 +-
+ tests/ocsp.c                        | 16 +++++++------
+ tests/suite/chain.sh                |  2 +-
+ tests/suite/crl-test                |  2 +-
+ tests/suite/pkcs7-cat               |  4 ++--
+ tests/test-chains.h                 | 36 ++++++++++++++---------------
+ tests/x509cert-tl.c                 |  4 ++--
+ 17 files changed, 47 insertions(+), 45 deletions(-)
+
+--- a/tests/cert-tests/aki
++++ b/tests/cert-tests/aki
+@@ -30,7 +30,7 @@ if ! test -z "${VALGRIND}"; then
+ fi
+ 
+ ${VALGRIND} "${CERTTOOL}" --certificate-info --infile "${srcdir}/aki-cert.pem" \
+-	|grep -v "Algorithm Security Level" > tmp-aki.pem
++	|grep -v "Algorithm Security Level"|grep -v ^warning > tmp-aki.pem
+ rc=$?
+ 
+ if test "${rc}" != "0"; then
+--- a/tests/cert-tests/name-constraints
++++ b/tests/cert-tests/name-constraints
+@@ -38,7 +38,7 @@ if test "$TSTAMP" != "1158969600"; then
+ fi
+ 
+ datefudge -s "2016-04-22" \
+-	${VALGRIND} "${CERTTOOL}" -e --infile "${srcdir}/name-constraints-ip.pem"
++	${VALGRIND} "${CERTTOOL}" --verify-allow-broken -e --infile "${srcdir}/name-constraints-ip.pem"
+ rc=$?
+ 
+ if test "${rc}" != "0"; then
+--- a/tests/cert-tests/pathlen
++++ b/tests/cert-tests/pathlen
+@@ -30,7 +30,7 @@ if ! test -z "${VALGRIND}"; then
+ fi
+ 
+ ${VALGRIND} "${CERTTOOL}" --certificate-info --infile "${srcdir}/ca-no-pathlen.pem" \
+-	|grep -v "Algorithm Security Level" > new-ca-no-pathlen.pem
++	|grep -v "Algorithm Security Level"|grep -v ^warning > new-ca-no-pathlen.pem
+ rc=$?
+ 
+ if test "${rc}" != "0"; then
+--- a/tests/cert-tests/pem-decoding
++++ b/tests/cert-tests/pem-decoding
+@@ -87,7 +87,7 @@ fi
+ 
+ cat "${srcdir}/xmpp-othername.pem" |grep -v "Not After:" >tmp1
+ cat tmp-pem.pem |grep -v "Not After:" >tmp2
+-${DIFF} tmp1 tmp2 || ${DIFF} --strip-trailing-cr tmp1 tmp2
++${DIFF} -I ^warning tmp1 tmp2 || ${DIFF} --strip-trailing-cr tmp1 tmp2
+ rc=$?
+ 
+ if test "${rc}" != "0"; then
+--- a/tests/pkcs1-padding/pkcs1-pad
++++ b/tests/pkcs1-padding/pkcs1-pad
+@@ -39,8 +39,8 @@ fi
+ 
+ EXPECT1=2002
+ 
+-datefudge "2006-09-23" "${CERTTOOL}" --verify-chain --infile "${srcdir}/pkcs1-pad-ok.pem" | tee out1 >/dev/null 2>&1
+-datefudge "2006-09-23" "${CERTTOOL}" --verify-chain --infile "${srcdir}/pkcs1-pad-broken.pem" | tee out2 >/dev/null 2>&1
++datefudge "2006-09-23" "${CERTTOOL}" --verify-allow-broken --verify-chain --infile "${srcdir}/pkcs1-pad-ok.pem" | tee out1 >/dev/null 2>&1
++datefudge "2006-09-23" "${CERTTOOL}" --verify-allow-broken --verify-chain --infile "${srcdir}/pkcs1-pad-broken.pem" | tee out2 >/dev/null 2>&1
+ 
+ out1oks=`grep 'Verified.' out1 | wc -l | tr -d " "`
+ out2oks=`grep 'Verified.' out2 | wc -l | tr -d " "`
+--- a/tests/chainverify-unsorted.c
++++ b/tests/chainverify-unsorted.c
+@@ -603,7 +603,7 @@ void doit(void)
+ 	gnutls_x509_crt_t *crts;
+ 	unsigned int crts_size, i;
+ 	gnutls_x509_trust_list_t tl;
+-	unsigned int status, flags = GNUTLS_VERIFY_ALLOW_UNSORTED_CHAIN;
++	unsigned int status, flags = GNUTLS_VERIFY_ALLOW_UNSORTED_CHAIN|GNUTLS_VERIFY_ALLOW_BROKEN;
+ 	unsigned int not_flags = GNUTLS_VERIFY_DO_NOT_ALLOW_UNSORTED_CHAIN;
+ 
+ 	/* this must be called once in the program
+--- a/tests/cve-2008-4989.c
++++ b/tests/cve-2008-4989.c
+@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
+ 	ret = gnutls_x509_crt_list_verify(certs, CHAIN_LENGTH,
+ 					  &ca, 1,
+ 					  NULL, 0,
+-					  GNUTLS_VERIFY_DISABLE_TIME_CHECKS,
++					  GNUTLS_VERIFY_DISABLE_TIME_CHECKS|GNUTLS_VERIFY_ALLOW_BROKEN,
+ 					  &verify_status);
+ 	if (ret < 0) {
+ 		fprintf(stderr, "gnutls_x509_crt_list_verify[%d]: %s",
+--- a/tests/dn2.c
++++ b/tests/dn2.c
+@@ -64,7 +64,7 @@ static char pem[] =
+     "/do1TDFI0vSl5+M=\n" "-----END CERTIFICATE-----\n";
+ 
+ static const char *info =
+-    "subject `jurisdictionOfIncorporationCountryName=DE,jurisdictionOfIncorporationLocalityName=Muenchen,businessCategory=V1.0\\, Clause 5.(b),serialNumber=HRB 144261,C=DE,postalCode=80807,ST=Bavaria,L=Muenchen,street=Frankfurter Ring 129,O=GMX GmbH,CN=www.gmx.de', issuer `C=US,O=VeriSign\\, Inc.,OU=VeriSign Trust Network,OU=Terms of use at https://www.verisign.com/rpa (c)06,CN=VeriSign Class 3 Extended Validation SSL SGC CA', RSA key 1024 bits, signed using RSA-SHA1, activated `2008-11-13 00:00:00 UTC', expires `2009-11-13 23:59:59 UTC', SHA-1 fingerprint `7ece297c45d5b17685224b4e929a30e91a9553cb'";
++    "subject `jurisdictionOfIncorporationCountryName=DE,jurisdictionOfIncorporationLocalityName=Muenchen,businessCategory=V1.0\\, Clause 5.(b),serialNumber=HRB 144261,C=DE,postalCode=80807,ST=Bavaria,L=Muenchen,street=Frankfurter Ring 129,O=GMX GmbH,CN=www.gmx.de', issuer `C=US,O=VeriSign\\, Inc.,OU=VeriSign Trust Network,OU=Terms of use at https://www.verisign.com/rpa (c)06,CN=VeriSign Class 3 Extended Validation SSL SGC CA', RSA key 1024 bits, signed using RSA-SHA1 (broken!), activated `2008-11-13 00:00:00 UTC', expires `2009-11-13 23:59:59 UTC', SHA-1 fingerprint `7ece297c45d5b17685224b4e929a30e91a9553cb'";
+ 
+ void doit(void)
+ {
+--- a/tests/mini-tdb.c
++++ b/tests/mini-tdb.c
+@@ -116,7 +116,7 @@ void doit(void)
+ 
+ 	/* verify whether the stored hash verification succeeeds */
+ 	ret = gnutls_store_commitment(TMP_FILE, NULL, "localhost", "https",
+-				      GNUTLS_DIG_SHA1, &hash, 0, 0);
++				      GNUTLS_DIG_SHA1, &hash, 0, GNUTLS_SCOMMIT_FLAG_ALLOW_BROKEN);
+ 	if (ret != 0) {
+ 		fail("commitment storage: %s\n", gnutls_strerror(ret));
+ 		goto fail;
+--- a/tests/ocsp.c
++++ b/tests/ocsp.c
+@@ -110,6 +110,7 @@ static const gnutls_datum_t resp1 =
+   "	Extensions:\n" \
+   "		Nonce: 16897d913ab525a445fec9fdc2e508a4\n" \
+   "	Signature Algorithm: RSA-SHA1\n" \
++  "warning: signed using a broken signature algorithm that can be forged.\n" \
+   "	Signature:\n" \
+   "		4e:ad:6b:2b:f7:f2:bf:a9:23:1e:3a:0b:06:db:55:53\n" \
+   "		2b:64:54:11:32:bf:60:f7:4f:e0:8e:9b:a0:a2:4c:79\n" \
+@@ -151,6 +152,7 @@ static const gnutls_datum_t resp2 =
+ "		Next Update: Thu Sep 11 06:04:00 UTC 2014\n" \
+ "	Extensions:\n" \
+ "	Signature Algorithm: RSA-SHA1\n" \
++"warning: signed using a broken signature algorithm that can be forged.\n" \
+ "	Signature:\n" \
+ "		6e:5e:5e:81:ff:3f:4d:c7:53:c7:1b:f3:d3:1d:dc:9a\n" \
+ "		c7:ce:77:2c:67:56:13:98:91:02:01:76:dc:48:b2:1f\n" \
+@@ -1406,7 +1408,7 @@ static void resp_verify(void)
+ 
+ 	/* check direct verify with signer (should succeed) */
+ 
+-	ret = gnutls_ocsp_resp_verify_direct(resp, signer, &verify, 0);
++	ret = gnutls_ocsp_resp_verify_direct(resp, signer, &verify, GNUTLS_VERIFY_ALLOW_BROKEN);
+ 	if (ret < 0) {
+ 		fail("gnutls_ocsp_resp_verify_direct (signer) %d\n", ret);
+ 		exit(1);
+@@ -1419,7 +1421,7 @@ static void resp_verify(void)
+ 
+ 	/* check direct verify with cert (should fail) */
+ 
+-	ret = gnutls_ocsp_resp_verify_direct(resp, cert, &verify, 0);
++	ret = gnutls_ocsp_resp_verify_direct(resp, cert, &verify, GNUTLS_VERIFY_ALLOW_BROKEN);
+ 	if (ret < 0) {
+ 		fail("gnutls_ocsp_resp_verify_direct (cert) %d\n", ret);
+ 		exit(1);
+@@ -1444,7 +1446,7 @@ static void resp_verify(void)
+ 		exit(1);
+ 	}
+ 
+-	ret = gnutls_ocsp_resp_verify(resp, list, &verify, 0);
++	ret = gnutls_ocsp_resp_verify(resp, list, &verify, GNUTLS_VERIFY_ALLOW_BROKEN);
+ 	if (ret < 0) {
+ 		fail("gnutls_ocsp_resp_verify (issuer) %d\n", ret);
+ 		exit(1);
+@@ -1471,7 +1473,7 @@ static void resp_verify(void)
+ 		exit(1);
+ 	}
+ 
+-	ret = gnutls_ocsp_resp_verify(resp, list, &verify, 0);
++	ret = gnutls_ocsp_resp_verify(resp, list, &verify, GNUTLS_VERIFY_ALLOW_BROKEN);
+ 	if (ret < 0) {
+ 		fail("gnutls_ocsp_resp_verify (issuer) %d\n", ret);
+ 		exit(1);
+@@ -1498,7 +1500,7 @@ static void resp_verify(void)
+ 		exit(1);
+ 	}
+ 
+-	ret = gnutls_ocsp_resp_verify(resp, list, &verify, 0);
++	ret = gnutls_ocsp_resp_verify(resp, list, &verify, GNUTLS_VERIFY_ALLOW_BROKEN);
+ 	if (ret < 0) {
+ 		fail("gnutls_ocsp_resp_verify (issuer) %d\n", ret);
+ 		exit(1);
+@@ -1537,7 +1539,7 @@ static void resp_verify(void)
+ 		exit(1);
+ 	}
+ 
+-	ret = gnutls_ocsp_resp_verify(resp, list, &verify, 0);
++	ret = gnutls_ocsp_resp_verify(resp, list, &verify, GNUTLS_VERIFY_ALLOW_BROKEN);
+ 	if (ret < 0) {
+ 		fail("gnutls_ocsp_resp_verify (issuer) %d\n", ret);
+ 		exit(1);
+@@ -1597,7 +1599,7 @@ static void long_resp_check(void)
+ 
+ 	/* check direct verify with signer (should succeed) */
+ 
+-	ret = gnutls_ocsp_resp_verify_direct(resp, signer, &verify, 0);
++	ret = gnutls_ocsp_resp_verify_direct(resp, signer, &verify, GNUTLS_VERIFY_ALLOW_BROKEN);
+ 	if (ret < 0) {
+ 		fail("gnutls_ocsp_resp_verify_direct (signer) %d\n", ret);
+ 		exit(1);
+--- a/tests/test-chains.h
++++ b/tests/test-chains.h
+@@ -1697,16 +1697,16 @@ static struct
+     0,
+     GNUTLS_CERT_SIGNER_NOT_CA | GNUTLS_CERT_INVALID, NULL, 1412850586},
+   { "CVE-2008-4989", cve_2008_4989_chain, &cve_2008_4989_chain[2],
+-    0,
++    GNUTLS_VERIFY_ALLOW_BROKEN,
+     GNUTLS_CERT_SIGNER_NOT_FOUND | GNUTLS_CERT_EXPIRED | GNUTLS_CERT_INVALID, NULL},
+   { "amazon.com ok", verisign_com_chain_g5, &verisign_com_chain_g5[4],
+-    GNUTLS_VERIFY_DISABLE_TIME_CHECKS | GNUTLS_PROFILE_TO_VFLAGS(GNUTLS_PROFILE_LOW),
++    GNUTLS_VERIFY_ALLOW_BROKEN | GNUTLS_VERIFY_DISABLE_TIME_CHECKS | GNUTLS_PROFILE_TO_VFLAGS(GNUTLS_PROFILE_LOW),
+     0, NULL},
+   { "verisign.com v1 fail", verisign_com_chain, &verisign_com_chain[3],
+-    0,
++    GNUTLS_VERIFY_ALLOW_BROKEN,
+     GNUTLS_CERT_EXPIRED | GNUTLS_CERT_INVALID, NULL},
+   { "verisign.com v1 ok", verisign_com_chain, &verisign_com_chain[3],
+-    GNUTLS_VERIFY_DISABLE_TIME_CHECKS | GNUTLS_PROFILE_TO_VFLAGS(GNUTLS_PROFILE_LOW),
++    GNUTLS_VERIFY_ALLOW_BROKEN | GNUTLS_VERIFY_DISABLE_TIME_CHECKS | GNUTLS_PROFILE_TO_VFLAGS(GNUTLS_PROFILE_LOW),
+     0, NULL},
+   { "verisign.com v1 not ok due to profile", verisign_com_chain, &verisign_com_chain[3],
+     GNUTLS_VERIFY_DISABLE_TIME_CHECKS | GNUTLS_PROFILE_TO_VFLAGS(GNUTLS_PROFILE_LEGACY),
+@@ -1715,23 +1715,23 @@ static struct
+     GNUTLS_VERIFY_DISABLE_TIME_CHECKS | GNUTLS_PROFILE_TO_VFLAGS(GNUTLS_PROFILE_HIGH),
+     GNUTLS_CERT_INSECURE_ALGORITHM | GNUTLS_CERT_INVALID, NULL},
+   { "citibank.com v1 fail", citibank_com_chain, &citibank_com_chain[2],
+-    GNUTLS_VERIFY_DO_NOT_ALLOW_X509_V1_CA_CRT, GNUTLS_CERT_SIGNER_NOT_CA | GNUTLS_CERT_INVALID, NULL},
++    GNUTLS_VERIFY_ALLOW_BROKEN | GNUTLS_VERIFY_DO_NOT_ALLOW_X509_V1_CA_CRT, GNUTLS_CERT_SIGNER_NOT_CA | GNUTLS_CERT_INVALID, NULL},
+   { "expired self signed", pem_self_cert, &pem_self_cert[0],
+     0, GNUTLS_CERT_EXPIRED | GNUTLS_CERT_INVALID, NULL},
+   { "self signed", pem_self_cert, &pem_self_cert[0],
+     GNUTLS_VERIFY_DISABLE_TIME_CHECKS, 0, NULL},
+   { "ca=false", thea_chain, &thea_chain[1],
+-    0,
++    GNUTLS_VERIFY_ALLOW_BROKEN,
+     GNUTLS_CERT_SIGNER_NOT_CA | GNUTLS_CERT_INVALID, NULL},
+   { "ca=false2", thea_chain, &thea_chain[1],
+-    0, GNUTLS_CERT_SIGNER_NOT_CA | GNUTLS_CERT_INVALID, NULL},
++    GNUTLS_VERIFY_ALLOW_BROKEN, GNUTLS_CERT_SIGNER_NOT_CA | GNUTLS_CERT_INVALID, NULL},
+   { "hbci v1 fail", hbci_chain, &hbci_chain[2],
+-    GNUTLS_VERIFY_DO_NOT_ALLOW_X509_V1_CA_CRT, GNUTLS_CERT_SIGNER_NOT_CA | GNUTLS_CERT_INVALID, NULL},
++    GNUTLS_VERIFY_ALLOW_BROKEN | GNUTLS_VERIFY_DO_NOT_ALLOW_X509_V1_CA_CRT, GNUTLS_CERT_SIGNER_NOT_CA | GNUTLS_CERT_INVALID, NULL},
+   { "hbci v1 ok expired", hbci_chain, &hbci_chain[2],
+-    0,
++    GNUTLS_VERIFY_ALLOW_BROKEN,
+     GNUTLS_CERT_EXPIRED | GNUTLS_CERT_INVALID, NULL},
+   { "hbci v1 ok", hbci_chain, &hbci_chain[2],
+-    GNUTLS_VERIFY_DISABLE_TIME_CHECKS,
++    GNUTLS_VERIFY_ALLOW_BROKEN|GNUTLS_VERIFY_DISABLE_TIME_CHECKS,
+     0, NULL},
+   { "rsa-md5 fail", mayfirst_chain, &mayfirst_chain[1],
+     GNUTLS_VERIFY_DISABLE_TIME_CHECKS,
+@@ -1745,7 +1745,7 @@ static struct
+   { "rsa-md5 ok", mayfirst_chain, &mayfirst_chain[1],
+     GNUTLS_VERIFY_DISABLE_TIME_CHECKS | GNUTLS_VERIFY_ALLOW_SIGN_RSA_MD5, 0, NULL},
+   { "v1ca fail", v1ca, &v1ca[2],
+-    GNUTLS_VERIFY_DO_NOT_ALLOW_X509_V1_CA_CRT, GNUTLS_CERT_SIGNER_NOT_CA | GNUTLS_CERT_INVALID, NULL},
++    GNUTLS_VERIFY_ALLOW_BROKEN|GNUTLS_VERIFY_DO_NOT_ALLOW_X509_V1_CA_CRT, GNUTLS_CERT_SIGNER_NOT_CA | GNUTLS_CERT_INVALID, NULL},
+ 
+   { "pathlen fail", pathlen_check, &pathlen_check[2],
+     GNUTLS_VERIFY_ALLOW_ANY_X509_V1_CA_CRT | GNUTLS_VERIFY_DISABLE_TIME_CHECKS, GNUTLS_CERT_INVALID | GNUTLS_CERT_SIGNER_CONSTRAINTS_FAILURE, NULL},
+@@ -1763,26 +1763,26 @@ static struct
+     GNUTLS_VERIFY_DISABLE_TIME_CHECKS, 0, NULL},
+ 
+   { "v1ca expired", v1ca, &v1ca[2],
+-    0,
++    GNUTLS_VERIFY_ALLOW_BROKEN,
+     GNUTLS_CERT_EXPIRED | GNUTLS_CERT_INVALID , NULL},
+   { "v1ca ok", v1ca, &v1ca[2],
+-    GNUTLS_VERIFY_DISABLE_TIME_CHECKS,
++    GNUTLS_VERIFY_ALLOW_BROKEN|GNUTLS_VERIFY_DISABLE_TIME_CHECKS,
+     0, NULL},
+   { "v1ca2 expired", v1ca, &v1ca[2],
+-    GNUTLS_VERIFY_ALLOW_ANY_X509_V1_CA_CRT,
++    GNUTLS_VERIFY_ALLOW_BROKEN|GNUTLS_VERIFY_ALLOW_ANY_X509_V1_CA_CRT,
+     GNUTLS_CERT_EXPIRED | GNUTLS_CERT_INVALID, NULL},
+   { "v1ca2 ok", v1ca, &v1ca[2],
+-    GNUTLS_VERIFY_DISABLE_TIME_CHECKS | GNUTLS_VERIFY_ALLOW_ANY_X509_V1_CA_CRT,
++    GNUTLS_VERIFY_ALLOW_BROKEN|GNUTLS_VERIFY_DISABLE_TIME_CHECKS | GNUTLS_VERIFY_ALLOW_ANY_X509_V1_CA_CRT,
+     0, NULL},
+   { "cacertrsamd5 fail", cacertrsamd5, &cacertrsamd5[2],
+     0, GNUTLS_CERT_INSECURE_ALGORITHM | GNUTLS_CERT_INVALID, NULL},
+   { "cacertrsamd5 ok", cacertrsamd5, &cacertrsamd5[2],
+-    GNUTLS_VERIFY_ALLOW_SIGN_RSA_MD5, 0, NULL},
++    GNUTLS_VERIFY_ALLOW_BROKEN, 0, NULL},
+   { "cacertrsamd5 short-cut not ok", cacertrsamd5, &cacertrsamd5[0],
+     GNUTLS_VERIFY_DO_NOT_ALLOW_SAME,
+     GNUTLS_CERT_SIGNER_NOT_FOUND | GNUTLS_CERT_INSECURE_ALGORITHM | GNUTLS_CERT_INVALID, NULL},
+   { "cacertrsamd5 short-cut ok", cacertrsamd5, &cacertrsamd5[1],
+-    0, 0, NULL},
++    GNUTLS_VERIFY_ALLOW_BROKEN, 0, NULL},
+   { "ecc cert ok", ecc_cert, &ecc_cert[1], GNUTLS_PROFILE_TO_VFLAGS(GNUTLS_PROFILE_HIGH), 0, NULL},
+   { "ecc cert ok", ecc_cert, &ecc_cert[1], GNUTLS_PROFILE_TO_VFLAGS(GNUTLS_PROFILE_SUITEB128), 0, NULL},
+   { "ecc cert not ok (due to profile)", ecc_cert, &ecc_cert[1], GNUTLS_PROFILE_TO_VFLAGS(GNUTLS_PROFILE_ULTRA), 
+@@ -1793,7 +1793,7 @@ static struct
+   { "name constraints chain bad1", nc_bad1, &nc_bad1[2], 0, GNUTLS_CERT_INVALID | GNUTLS_CERT_SIGNER_CONSTRAINTS_FAILURE, NULL, 1412850586},
+   { "name constraints chain bad2", nc_bad2, &nc_bad2[4], 0, GNUTLS_CERT_INVALID | GNUTLS_CERT_SIGNER_CONSTRAINTS_FAILURE, NULL, 1412850586},
+   { "name constraints chain bad3", nc_bad3, &nc_bad3[2], 0, GNUTLS_CERT_INVALID | GNUTLS_CERT_SIGNER_CONSTRAINTS_FAILURE, NULL, 1412850586},
+-  { "not-modified", modified2, &modified2[3], 0, 0, NULL, 1412850586},
++  { "not-modified", modified2, &modified2[3], GNUTLS_VERIFY_ALLOW_BROKEN, 0, NULL, 1412850586},
+   { "kp-interm", kp_fail1, &kp_fail1[3], 0, GNUTLS_CERT_INVALID | GNUTLS_CERT_PURPOSE_MISMATCH, GNUTLS_KP_TLS_WWW_SERVER, 1412850586},
+   { "kp-fin", kp_fail2, &kp_fail2[3], 0, GNUTLS_CERT_INVALID | GNUTLS_CERT_PURPOSE_MISMATCH, GNUTLS_KP_TLS_WWW_SERVER, 1412850586},
+   { "kp-ok", kp_ok, &kp_ok[3], 0, 0, GNUTLS_KP_OCSP_SIGNING, 1412850586},
+--- a/tests/x509cert-tl.c
++++ b/tests/x509cert-tl.c
+@@ -299,7 +299,7 @@ void doit(void)
+ 		fail("gnutls_x509_trust_list_add_trust_dir: %d\n", ret);
+ 
+ 	ret =
+-	    gnutls_x509_trust_list_verify_crt(tl, &server_crt, 1, 0,
++	    gnutls_x509_trust_list_verify_crt(tl, &server_crt, 1, GNUTLS_VERIFY_ALLOW_BROKEN,
+ 					      &status, NULL);
+ 	if (ret < 0 || status != 0)
+ 		fail("gnutls_x509_trust_list_verify_crt\n");

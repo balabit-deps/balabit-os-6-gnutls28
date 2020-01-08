@@ -1,0 +1,60 @@
+Backport of:
+
+From 3efadd1f8067add60ab60ab7d9fe5aa866bfc980 Mon Sep 17 00:00:00 2001
+From: Nikos Mavrogiannopoulos <nmav@redhat.com>
+Date: Thu, 20 Jul 2017 13:18:10 +0200
+Subject: [PATCH] x509/verify: reject SHA1 in signature algorithms for
+ certificate verification
+
+That is, we now use gnutls_sign_is_secure2() with GNUTLS_SIGN_FLAG_SECURE_FOR_CERTS
+flag for checking the validity of the signature algorithm, when
+verifying signatures in certificates.
+
+Resolves #229
+
+Signed-off-by: Nikos Mavrogiannopoulos <nmav@redhat.com>
+---
+ lib/x509/output.c | 6 +++---
+ lib/x509/verify.c | 2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/lib/x509/output.c
++++ b/lib/x509/output.c
+@@ -1386,7 +1386,7 @@ print_cert(gnutls_buffer_st * str, gnutl
+ 				name = _("unknown");
+ 			addf(str, _("\tSignature Algorithm: %s\n"), name);
+ 		}
+-		if (gnutls_sign_is_secure(err) == 0) {
++		if (gnutls_sign_is_secure2(err, GNUTLS_SIGN_FLAG_SECURE_FOR_CERTS) == 0) {
+ 			adds(str,
+ 			     _("warning: signed using a broken signature "
+ 			       "algorithm that can be forged.\n"));
+@@ -1592,7 +1592,7 @@ static void print_oneline(gnutls_buffer_
+ 			    gnutls_sign_algorithm_get_name(err);
+ 			if (name == NULL)
+ 				name = _("unknown");
+-			if (gnutls_sign_is_secure(err) == 0)
++			if (gnutls_sign_is_secure2(err, GNUTLS_SIGN_FLAG_SECURE_FOR_CERTS) == 0)
+ 				addf(str, _("signed using %s (broken!), "),
+ 				     name);
+ 			else
+@@ -2028,7 +2028,7 @@ print_crl(gnutls_buffer_st * str, gnutls
+ 				name = _("unknown");
+ 			addf(str, _("\tSignature Algorithm: %s\n"), name);
+ 		}
+-		if (gnutls_sign_is_secure(err) == 0) {
++		if (gnutls_sign_is_secure2(err, GNUTLS_SIGN_FLAG_SECURE_FOR_CERTS) == 0) {
+ 			adds(str,
+ 			     _("warning: signed using a broken signature "
+ 			       "algorithm that can be forged.\n"));
+--- a/lib/x509/verify.c
++++ b/lib/x509/verify.c
+@@ -756,7 +756,7 @@ verify_crt(gnutls_x509_crt_t cert,
+ 		 * used are secure. If the certificate is self signed it doesn't
+ 		 * really matter.
+ 		 */
+-		if (gnutls_sign_is_secure(sigalg) == 0 &&
++		if (gnutls_sign_is_secure2(sigalg, GNUTLS_SIGN_FLAG_SECURE_FOR_CERTS) == 0 &&
+ 		    is_broken_allowed(sigalg, flags) == 0 &&
+ 		    is_issuer(cert, cert) == 0) {
+ 			gnutls_assert();
