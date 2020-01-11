@@ -1,3 +1,9 @@
+gnutls28 (3.4.10-4ubuntu1.6bb1) xenial; urgency=medium
+
+  * Balabit patched version
+
+ -- Balabit Platform Team <devnull@dev.null>  Sat, 11 Jan 2020 04:21:37 +0100
+
 gnutls28 (3.4.10-4ubuntu1.6) xenial-security; urgency=medium
 
   * SECURITY UPDATE: Mark SHA1 as insecure for certificate signing
