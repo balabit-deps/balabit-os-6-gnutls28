@@ -1,0 +1,25 @@
+From 8958a7a10ce309c5603e618dcd2b9329714c93b5 Mon Sep 17 00:00:00 2001
+From: Nikos Mavrogiannopoulos <nmav@redhat.com>
+Date: Thu, 20 Jul 2017 14:43:20 +0200
+Subject: [PATCH] algorithms/mac: marked RIPEMD160 as insecure for certificates
+
+This is an algorithm which is not really used in Internet PKI
+and due to that has seen no public cryptanalysis. As such
+we disable it for certificate verification to prevent it from
+being used as an attack vector.
+
+Signed-off-by: Nikos Mavrogiannopoulos <nmav@redhat.com>
+---
+ lib/algorithms/mac.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/lib/algorithms/mac.c
++++ b/lib/algorithms/mac.c
+@@ -93,6 +93,7 @@ static const mac_entry_st hash_algorithm
+ 	 .id = GNUTLS_MAC_RMD160,
+ 	 .output_size = 20,
+ 	 .key_size = 20,
++	 .slevel = _INSECURE_FOR_CERTS,
+ 	 .block_size = 64},
+ 	{.name = "MAC-NULL",
+ 	 .id = GNUTLS_MAC_NULL},

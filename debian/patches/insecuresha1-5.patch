@@ -1,0 +1,185 @@
+Backport of:
+
+From 4403df554edca0de152cd6eacfbe2e16e893af6a Mon Sep 17 00:00:00 2001
+From: Nikos Mavrogiannopoulos <nmav@redhat.com>
+Date: Thu, 20 Jul 2017 12:40:34 +0200
+Subject: [PATCH] _gnutls_digest_is_secure_for_certs: introduced
+
+This is a macro to allow checking the security of a hash algorithm
+with respect to signing certificates.
+
+Signed-off-by: Nikos Mavrogiannopoulos <nmav@redhat.com>
+---
+ lib/algorithms.h     | 12 +++++++++++-
+ lib/algorithms/mac.c | 40 ++++++++++++++++------------------------
+ lib/gnutls_int.h     |  9 ++++++++-
+ m4/hooks.m4          |  4 ++--
+ 4 files changed, 37 insertions(+), 28 deletions(-)
+
+--- a/lib/algorithms.h
++++ b/lib/algorithms.h
+@@ -146,12 +146,22 @@ inline static int _gnutls_mac_get_key_si
+ #define _gnutls_digest_get_name _gnutls_mac_get_name
+ #define _gnutls_hash_get_algo_len _gnutls_mac_get_algo_len
+ 
++/* Check generic-purpose security */
+ inline static int _gnutls_digest_is_secure(const mac_entry_st * e)
+ {
+ 	if (unlikely(e == NULL))
+ 		return 0;
+ 	else
+-		return e->secure;
++		return (e->slevel==_SECURE || e->slevel == _INSECURE_FOR_CERTS)?1:0;
++}
++
++/* Check certificate use security */
++inline static int _gnutls_digest_is_secure_for_certs(const mac_entry_st * e)
++{
++	if (unlikely(e == NULL))
++		return 0;
++	else
++		return (e->slevel==_SECURE)?1:0;
+ }
+ 
+ /* Functions for cipher suites. */
+--- a/lib/algorithms/mac.c
++++ b/lib/algorithms/mac.c
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) 2011-2012 Free Software Foundation, Inc.
++ * Copyright (C) 2017 Red Hat, Inc.
+  *
+  * Author: Nikos Mavrogiannopoulos
+  *
+@@ -26,9 +27,9 @@
+ #include <x509/common.h>
+ 
+ #ifdef ALLOW_SHA1
+-# define SHA1_SECURE_VAL 1
+-#else
+ # define SHA1_SECURE_VAL 0
++#else
++# define SHA1_SECURE_VAL _INSECURE_FOR_CERTS
+ #endif
+ 
+ static const mac_entry_st hash_algorithms[] = {
+@@ -37,67 +38,61 @@ static const mac_entry_st hash_algorithm
+ 	 .id = GNUTLS_MAC_SHA1,
+ 	 .output_size = 20,
+ 	 .key_size = 20,
+-	 .secure = SHA1_SECURE_VAL,
+-	 .block_size = 64},
+-	{.name = "MD5",
+-	 .oid = HASH_OID_MD5,
+-	 .id = GNUTLS_MAC_MD5,
+-	 .output_size = 16,
+-	 .key_size = 16,
++	 .slevel = SHA1_SECURE_VAL,
+ 	 .block_size = 64},
+ 	{.name = "SHA256",
+ 	 .oid = HASH_OID_SHA256,
+ 	 .id = GNUTLS_MAC_SHA256,
+ 	 .output_size = 32,
+ 	 .key_size = 32,
+-	 .secure = 1,
+ 	 .block_size = 64},
+ 	{.name = "SHA384",
+ 	 .oid = HASH_OID_SHA384,
+ 	 .id = GNUTLS_MAC_SHA384,
+ 	 .output_size = 48,
+ 	 .key_size = 48,
+-	 .secure = 1,
+ 	 .block_size = 64},
+ 	{.name = "SHA512",
+ 	 .oid = HASH_OID_SHA512,
+ 	 .id = GNUTLS_MAC_SHA512,
+ 	 .output_size = 64,
+ 	 .key_size = 64,
+-	 .secure = 1,
+ 	 .block_size = 64},
+ 	{.name = "SHA224",
+ 	 .oid = HASH_OID_SHA224,
+ 	 .id = GNUTLS_MAC_SHA224,
+ 	 .output_size = 28,
+ 	 .key_size = 28,
+-	 .secure = 1,
+ 	 .block_size = 64},
+ 	{.name = "UMAC-96",
+ 	 .id = GNUTLS_MAC_UMAC_96,
+ 	 .output_size = 12,
+ 	 .key_size = 16,
+-	 .nonce_size = 8,
+-	 .secure = 1},
++	 .nonce_size = 8},
+ 	{.name = "UMAC-128",
+ 	 .id = GNUTLS_MAC_UMAC_128,
+ 	 .output_size = 16,
+ 	 .key_size = 16,
+-	 .nonce_size = 8,
+-	 .secure = 1},
++	 .nonce_size = 8},
+ 	{.name = "AEAD",
+ 	 .id = GNUTLS_MAC_AEAD,
+-	 .placeholder = 1,
+-	 .secure = 1},
++	 .placeholder = 1},
++	{.name = "MD5",
++	 .oid = HASH_OID_MD5,
++	 .id = GNUTLS_MAC_MD5,
++	 .output_size = 16,
++	 .key_size = 16,
++	 .slevel = _INSECURE,
++	 .block_size = 64},
+ 	{.name = "MD2",
+ 	 .oid = HASH_OID_MD2,
++	 .slevel = _INSECURE,
+ 	 .id = GNUTLS_MAC_MD2},
+ 	{.name = "RIPEMD160",
+ 	 .oid = HASH_OID_RMD160,
+ 	 .id = GNUTLS_MAC_RMD160,
+ 	 .output_size = 20,
+ 	 .key_size = 20,
+-	 .secure = 1,
+ 	 .block_size = 64},
+ 	{.name = "MAC-NULL",
+ 	 .id = GNUTLS_MAC_NULL},
+--- a/lib/gnutls_int.h
++++ b/lib/gnutls_int.h
+@@ -461,6 +461,13 @@ typedef struct gnutls_cipher_suite_entry
+ 	gnutls_mac_algorithm_t prf;
+ } gnutls_cipher_suite_entry_st;
+ 
++
++typedef enum hash_security_level_t {
++	_SECURE,
++	_INSECURE_FOR_CERTS,
++	_INSECURE
++} hash_security_level_t;
++
+ /* This structure is used both for MACs and digests
+  */
+ typedef struct mac_entry_st {
+@@ -471,7 +478,7 @@ typedef struct mac_entry_st {
+ 	unsigned key_size;
+ 	unsigned nonce_size;
+ 	unsigned placeholder;	/* if set, then not a real MAC */
+-	unsigned secure;	/* must be set to zero if this hash is known to be broken */
++	hash_security_level_t slevel;	/* contains values of hash_security_level_t */
+ 	unsigned block_size;	/* internal block size for HMAC */
+ } mac_entry_st;
+ 
+--- a/m4/hooks.m4
++++ b/m4/hooks.m4
+@@ -141,10 +141,10 @@ LIBTASN1_MINIMUM=4.3
+   ])
+ 
+   ac_allow_sha1=no
+-  AC_MSG_CHECKING([whether to allow SHA1 as an acceptable hash for digital signatures])
++  AC_MSG_CHECKING([whether to allow SHA1 as an acceptable hash for cert digital signatures])
+   AC_ARG_ENABLE(sha1-support,
+     AS_HELP_STRING([--enable-sha1-support],
+-                   [allow SHA1 as an acceptable hash for digital signatures]),
++                   [allow SHA1 as an acceptable hash for cert digital signatures]),
+     ac_allow_sha1=$enableval)
+   if test x$ac_allow_sha1 != xno; then
+    AC_MSG_RESULT(no)

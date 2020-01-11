@@ -1,3 +1,12 @@
+gnutls28 (3.4.10-4ubuntu1.6) xenial-security; urgency=medium
+
+  * SECURITY UPDATE: Mark SHA1 as insecure for certificate signing
+    - debian/patches/insecuresha1-*.patch: backport upstream patches to
+      allow marking SHA1 as insecure, but only for certificate signing.
+    - debian/libgnutls30.symbols: added new symbol.
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Wed, 08 Jan 2020 12:52:12 -0500
+
 gnutls28 (3.4.10-4ubuntu1.5bb1) xenial; urgency=medium
 
   * Balabit patched version

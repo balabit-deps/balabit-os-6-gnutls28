@@ -1,0 +1,29 @@
+Backport of:
+
+From 1d75e116b1681d0e6b140d7530e7f0403088da88 Mon Sep 17 00:00:00 2001
+From: Nikos Mavrogiannopoulos <nmav@redhat.com>
+Date: Fri, 24 Feb 2017 08:35:34 +0100
+Subject: [PATCH] algorithms: tag SHA1 as insecure algorithm
+
+Although SHA1 was considered to be risky to use the past few years,
+there has been no demonstration of breakage. As of 2017-2-23 there has
+been a demonstrated collision in SHA1, and even though the attack was
+a costly one, it provided the incentive to should move SHA1 into
+the broken hashes list together with MD5 and MD2.
+
+Signed-off-by: Nikos Mavrogiannopoulos <nmav@redhat.com>
+---
+ lib/algorithms/mac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/lib/algorithms/mac.c
++++ b/lib/algorithms/mac.c
+@@ -26,7 +26,7 @@
+ #include <x509/common.h>
+ 
+ static const mac_entry_st hash_algorithms[] = {
+-	{"SHA1", HASH_OID_SHA1, GNUTLS_MAC_SHA1, 20, 20, 0, 0, 1, 64},
++	{"SHA1", HASH_OID_SHA1, GNUTLS_MAC_SHA1, 20, 20, 0, 0, 0, 64},
+ 	{"MD5", HASH_OID_MD5, GNUTLS_MAC_MD5, 16, 16, 0, 0, 0, 64},
+ 	{"SHA256", HASH_OID_SHA256, GNUTLS_MAC_SHA256, 32, 32, 0, 0, 1,
+ 	 64},
