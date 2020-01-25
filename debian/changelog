@@ -1,3 +1,14 @@
+gnutls28 (3.4.10-4ubuntu1.7) xenial-security; urgency=medium
+
+  * SECURITY UPDATE: Allow re-enabling SHA1 for certificate signing with a
+    priority string (LP: #1860656)
+    - debian/patches/allow_broken_priority_string.patch: introduce the
+      %VERIFY_ALLOW_BROKEN priority string option.
+    - debian/patches/allow_sha1_priority_string.patch: introduce the
+      %VERIFY_ALLOW_SIGN_WITH_SHA1 priority string option.
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Thu, 23 Jan 2020 08:47:43 -0500
+
 gnutls28 (3.4.10-4ubuntu1.6bb1) xenial; urgency=medium
 
   * Balabit patched version

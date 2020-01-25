@@ -38,3 +38,5 @@ insecuresha1-13.patch
 insecuresha1-14.patch
 insecuresha1-15.patch
 insecuresha1-16.patch
+allow_broken_priority_string.patch
+allow_sha1_priority_string.patch
