@@ -1,3 +1,11 @@
+gnutls28 (3.4.10-4ubuntu1.8) xenial; urgency=medium
+
+  * d/p/50_Update-session_ticket.c-to-add-support-for-zero-leng.patch:
+    - add support for zero length  session tickets returned from the server,
+      thanks Rod for the backport and testing! (lp: #1876286)
+
+ -- Sebastien Bacher <seb128@ubuntu.com>  Wed, 17 Jun 2020 23:06:13 +0200
+
 gnutls28 (3.4.10-4ubuntu1.7) xenial-security; urgency=medium
 
   * SECURITY UPDATE: Allow re-enabling SHA1 for certificate signing with a
