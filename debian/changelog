@@ -1,3 +1,9 @@
+gnutls28 (3.4.10-4ubuntu1.8bb1) xenial; urgency=medium
+
+  * Balabit patched version
+
+ -- Balabit Platform Team <devnull@dev.null>  Sat, 04 Jul 2020 04:22:41 +0200
+
 gnutls28 (3.4.10-4ubuntu1.8) xenial; urgency=medium
 
   * d/p/50_Update-session_ticket.c-to-add-support-for-zero-leng.patch:
