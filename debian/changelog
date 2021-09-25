@@ -1,3 +1,12 @@
+gnutls28 (3.4.10-4ubuntu1.9) xenial; urgency=medium
+
+  * Backport patches from Upstream/Debian to check validity against system
+    certs. This is to allow correctly validating default letsencrypt
+    chains that now also include a redundant expired certficate. LP:
+    #1928648
+
+ -- Dimitri John Ledkov <dimitri.ledkov@canonical.com>  Fri, 27 Aug 2021 14:19:17 +0100
+
 gnutls28 (3.4.10-4ubuntu1.8bb1) xenial; urgency=medium
 
   * Balabit patched version

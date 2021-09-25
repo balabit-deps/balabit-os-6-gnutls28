@@ -41,3 +41,8 @@ insecuresha1-16.patch
 allow_broken_priority_string.patch
 allow_sha1_priority_string.patch
 50_Update-session_ticket.c-to-add-support-for-zero-leng.patch
+0001-gnutls_x509_trust_list_verify_crt2-treat-signers-wit.patch
+44_rel3.6.14_15-_gnutls_pkcs11_verify_crt_status-check-validity-agai.patch
+44_rel3.6.14_16-x509-trigger-fallback-verification-path-when-cert-is.patch
+44_rel3.6.14_17-tests-add-test-case-for-certificate-chain-supersedin.patch
+0001-tests-modified-pkcs1-pad-to-account-for-alt-path-sea.patch
